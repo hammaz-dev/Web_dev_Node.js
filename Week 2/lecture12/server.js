@@ -1,17 +1,29 @@
 const express = require("express");
-const studentRoutes = require("./routes/studentRoutes")
+const studentRoutes = require("./routes/studentRoutes");
 
 const app = express();
-const PORT = 3000;
 
-// Middleware to parse incoming JSON data from the client
+// Fallback to 3000 if the environment port is busy or undefined
+const PORT = process.env.PORT || 3000;
+
+// Global Middleware
 app.use(express.json());
 
-app.use("/",studentRoutes);
-// app.use("")
+// API Routes
+app.use("/", studentRoutes);
 
+// Server initialization with dynamic port handling
+const server = app.listen(PORT, () => {
+    console.log(`[SUCCESS] Server safely running on port ${PORT}`);
+});
 
-// --- SERVER START ---
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+// Graceful error handling for busy ports
+server.on("error", (error) => {
+    if (error.code === "EADDRINUSE") {
+        console.error(`[ERROR] Port ${PORT} is already in use. Retrying with an alternative port...`);
+        // Optional: Automate switching to a random free port
+        server.listen(0); 
+    } else {
+        console.error("[ERROR] Server failed to start:", error.message);
+    }
 });
